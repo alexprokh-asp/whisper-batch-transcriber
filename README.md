@@ -144,3 +144,55 @@ input/lecture01.mp3
 ```
 
 ---
+
+## Language Configuration
+
+By default, the transcription script is configured for **Russian speech recognition**:
+
+```python
+language="ru"
+```
+
+---
+
+## How to change language
+
+To enable a different language mode, modify the `language` parameter in the `transcribe()` function.
+
+### English transcription
+
+```python
+language="en"
+```
+
+### Ukrainian transcription
+
+```python
+language="uk"
+```
+
+### Automatic language detection (recommended)
+
+To let Whisper automatically detect the language, **remove the parameter completely**:
+
+```python
+# language parameter removed
+```
+
+Example:
+
+```python
+segments, info = model.transcribe(
+    file_path,
+    vad_filter=True,
+    beam_size=5
+)
+```
+
+---
+
+## Notes
+
+- Current default: **Russian (ru)**
+- Automatic mode works best for mixed-language audio (RU/EN/UA)
+- Removing `language` improves flexibility but may slightly increase processing time
