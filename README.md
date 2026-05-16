@@ -198,14 +198,9 @@ language="uk"
 To let Whisper automatically detect the language, **remove the parameter completely**:
 
 ```python
-# language parameter removed
-```
-
-Example:
-
-```python
 segments, info = model.transcribe(
     file_path,
+    language="ru", - REMOVE!
     vad_filter=True,
     beam_size=5
 )
