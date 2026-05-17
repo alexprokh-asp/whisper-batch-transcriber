@@ -213,3 +213,37 @@ segments, info = model.transcribe(
 - Current default: **Russian (ru)**
 - Automatic mode works best for mixed-language audio (RU/EN/UA)
 - Removing `language` improves flexibility but may slightly increase processing time
+
+
+
+### n8n Workflow Integration (Lecture → AI → Google Docs)
+
+A ready-to-use n8n workflow template is included for local automation in n8n.
+
+The workflow runs in a local n8n instance and processes lecture transcripts through an AI pipeline.
+
+---
+
+### What it does:
+
+- Receives raw lecture text via webhook
+- Sends the text to an AI agent for summarization and structuring
+- Converts output into a formatted technical article
+- Automatically creates a Google Docs document
+- Fills the document using Google Docs API
+
+---
+
+### Pipeline:
+
+Lecture Text → n8n Webhook → AI Summarization → Markdown Structuring → Google Docs Export
+
+---
+
+### Purpose:
+
+This workflow automates conversion of long lecture transcripts into:
+
+- structured technical documentation
+- developer-friendly notes
+- clean Google Docs articles for storage and sharing
