@@ -1,0 +1,212 @@
+{
+  "name": "STT LEC2DOC",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты — профессиональный технический редактор и senior IT-инженер. Твоя задача — создать структурированную техническую статью на основе стенограммы лекции.\n\n### ЖЁСТКИЕ ОГРАНИЧЕНИЯ:\n- Исходная стенограмма ≈ 227 КБ.\n- Финальный `content_markdown` должен быть **примерно в 2.5–3 раза короче** исходного текста (ориентировочно 70–100 тысяч символов максимум).\n- **Не раздувай** текст. Не добавляй лишних объяснений, не повторяй идеи, не углубляй сверх того, что было в лекции.\n- Сохраняй все важные детали, примеры и кейсы, но будь лаконичным и плотным.\n- Не обрывай предложения и разделы.\n\n### ЗАДАЧА:\n1. Точный перевод на естественный профессиональный русский.\n2. Сохрани структуру и смысл лекции.\n3. Сделай текст удобным для чтения IT-специалистами.\n\n### ОБЯЗАТЕЛЬНАЯ СТРУКТУРА:\n\n# [Точное название лекции на русском]\n\n## Введение\n## Основные Концепции и Теория\n## Ключевые Технические Детали\n## Практические Проблемы и Боли в Продакшене\n## Разбор Примеров и Кейсов\n## Рекомендации и Лучшие Практики\n## Критические Инсайты и Неочевидные Наблюдения\n## Заключение\n\n### ПРАВИЛА:\n- **Жирный** только для ключевых терминов.\n- Списки через \"- \".\n- Пиши плотно и по делу.\n\n### ФОРМАТ ОТВЕТА — ТОЛЬКО ВАЛИДНЫЙ JSON:\n{\n  \"doc_name\": \"2026-05-17 - Тихая смерть AI в продакшене: почему системы деградируют молча\",\n  \"content_markdown\": \"# Заголовок\\\\n\\\\n## Введение\\\\n...\"\n}\n---\n\n# СТЕНОГРАММА ЛЕКЦИИ:\n{{ $json.body.content }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -96,
+        16
+      ],
+      "id": "239d6876-0a96-4b68-8229-66a879a1b5e3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "folderId": "1xMFYwICf-bKt5qvyfgXxHltvISBYGQ6W",
+        "title": "={{ $json.doc_name }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        352,
+        16
+      ],
+      "id": "a8657cd2-42c7-4fee-a895-c6cdeaa4c0c9",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "1bW8nDtDDQ0S9dSe",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = items[0].json.output || items[0].json;\nconst docId = items[0].json.id || items[0].json.documentId;\n\nlet parsed;\nif (typeof inputData === 'string') {\n    try {\n        parsed = JSON.parse(inputData);\n    } catch(e) { \n        parsed = { content_markdown: inputData, doc_name: \"Без названия\" }; \n    }\n} else {\n    parsed = inputData;\n}\n\nconst md = parsed.content_markdown || \"\";\nconst docName = parsed.doc_name || \"Новый документ\"; // Вот мы получили doc_name отдельно\n\nconst lines = md.split('\\n');\nlet requests = [];\nlet currentIndex = 1; \n\nfor (let line of lines) {\n    let style = 'NORMAL_TEXT';\n    let cleanText = line;\n\n    if (line.startsWith('# ')) {\n        style = 'HEADING_1';\n        cleanText = line.replace('# ', '');\n    } else if (line.startsWith('## ')) {\n        style = 'HEADING_2';\n        cleanText = line.replace('## ', '');\n    }\n\n    cleanText = cleanText.replace(/\\*\\*/g, '').trim();\n    \n    if (cleanText === \"\") {\n        requests.push({ insertText: { location: { index: currentIndex }, text: \"\\n\" } });\n        currentIndex += 1;\n        continue;\n    }\n\n    const fullText = cleanText + \"\\n\";\n    const length = fullText.length;\n\n    requests.push({\n        insertText: { location: { index: currentIndex }, text: fullText }\n    });\n\n    if (style !== 'NORMAL_TEXT') {\n        requests.push({\n            updateParagraphStyle: {\n                range: { startIndex: currentIndex, endIndex: currentIndex + length },\n                paragraphStyle: { namedStyleType: style },\n                fields: 'namedStyleType'\n            }\n        });\n    }\n    currentIndex += length;\n}\n\n// Теперь узел выдает и название, и массив запросов, и ID\nreturn { \n    documentId: docId, \n    doc_name: docName, \n    requests: requests \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        16
+      ],
+      "id": "98bc14ff-2d8f-4edb-bef8-4159743362f6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "model": "grok-4.20-0309-reasoning",
+        "options": {
+          "maxTokens": 12000,
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        176
+      ],
+      "id": "2b4563fa-44b5-4f13-9e99-dd41c6cf8ca6",
+      "name": "xAI Grok",
+      "credentials": {
+        "xAiApi": {
+          "id": "2i9r2RJYe9URrlmD",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "777"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        176
+      ],
+      "id": "db1ad4be-c8f4-479d-880d-a01f97fc6394",
+      "name": "Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a02e0239-53a6-44ce-9939-40eab1d80f1e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "bd553159-9db4-4a11-b4fc-4d5a2fe195df",
+      "name": "Listner",
+      "webhookId": "a02e0239-53a6-44ce-9939-40eab1d80f1e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.id }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": {{ JSON.stringify($('Code in JavaScript').item.json.requests) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        512,
+        16
+      ],
+      "id": "b582be76-2749-47a6-a04b-07c62fadfb10",
+      "name": "Text2Doc",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "1bW8nDtDDQ0S9dSe",
+          "name": "Google Docs account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Text2Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listner": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a3e5d0d4-7f25-44b7-8663-cec96283d50a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a20f8f51604ee5052ef776f35f47f2cf0ff35337ce1382253e39c27f8d9c2f97"
+  },
+  "id": "aX3u5x2GTm5azDRe",
+  "tags": []
+}
