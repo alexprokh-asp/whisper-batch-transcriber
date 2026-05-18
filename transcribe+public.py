@@ -4,8 +4,11 @@
 
 from faster_whisper import WhisperModel
 from datetime import datetime
+from pathlib import Path
 import os
 import time
+import requests
+
 
 # ==============================
 # Configuration
@@ -17,6 +20,9 @@ OUTPUT_DIR = "output"
 MODEL_SIZE = "medium"
 
 SUPPORTED_EXTENSIONS = (".mp3", ".wav", ".m4a", ".flac")
+
+WEBHOOK_URL = "http://localhost:5678/webhook/a02e0239-53a6-44ce-9939-40eab1d80f1e"
+# WEBHOOK_URL = "http://localhost:5678/webhook-test/a02e0239-53a6-44ce-9939-40eab1d80f1e"
 
 # ==============================
 # Model Initialization
@@ -63,7 +69,7 @@ def transcribe_file(file_path):
 
     segments, info = model.transcribe(
         file_path,
-        language="uk",
+        language="ru",
         vad_filter=True,
         beam_size=5
     )
@@ -115,6 +121,15 @@ for index, file_name in enumerate(files, start=1):
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(result_text)
+
+        # Sent to webhook
+
+        payload = {
+            "filename": output_file_name,
+            "content": result_text
+        }
+
+        response = requests.post(WEBHOOK_URL, json=payload)
 
         end_datetime = datetime.now()
         end_time = time.time()
