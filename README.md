@@ -1,5 +1,8 @@
 # Whisper GPU Batch Transcriber (Local)
 
+## 🎥 Demo
+https://drive.google.com/file/d/1z1G9twUUue43Aez2Ofbc0_czDHXFHcUx/view?usp=drive_link
+
 GPU-accelerated local batch audio transcription tool using Faster Whisper and NVIDIA CUDA.
 It converts multiple MP3 files from an input folder into clean text files in an output folder.
 
